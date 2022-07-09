@@ -12,7 +12,8 @@ homepage = "https://github.com/Dah-phd/a-star_traitbased"
 description = "Implemetaion of A* useful for stuct, based on train implementation"
 repository = "https://github.com/Dah-phd/a-star_traitbased"
 keywords = [
-    "A star",
+    "A*",
+    "Astar",
     "pathfinding",
     "algorithm",
     "trait"
