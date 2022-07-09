@@ -1,0 +1,26 @@
+[package]
+name = "a-star_traitbased"
+version = "0.1.0"
+edition = "2022"
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "LICENCE",
+    "README.MD"
+]
+homepage = ""
+description = "Implemetaion of A* useful for stuct, based on train implementation"
+repository = ""
+keywords = [
+    "A*",
+    "A star",
+    "pathfinding",
+    "algorithm",
+    "trait"
+]
+categories = ["Algorithms"]
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
