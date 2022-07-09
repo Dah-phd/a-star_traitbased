@@ -18,7 +18,7 @@ keywords = [
     "algorithm",
     "trait"
 ]
-categories = ["Algorithms"]
+categories = ["algorithms"]
 license = "MIT"
 
 [dependencies]
