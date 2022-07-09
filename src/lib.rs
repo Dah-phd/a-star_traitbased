@@ -1,12 +1,18 @@
-// generic implementation of pathfinid algorithm
-// current users: Quoridor
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::rc::Rc;
 
 pub trait PathGenerator {
     fn generate_paths(&self, from_position: (usize, usize)) -> Vec<(usize, usize)>;
-    fn calculate_heuristic_cost(&self, position: (usize, usize), target: (Option<usize>, Option<usize>)) -> usize;
-    fn calculate_cost(&self, current_position: (usize, usize), next_position: (usize, usize)) -> usize;
+    fn calculate_heuristic_cost(
+        &self,
+        position: (usize, usize),
+        target: (Option<usize>, Option<usize>),
+    ) -> usize;
+    fn calculate_cost(
+        &self,
+        current_position: (usize, usize),
+        next_position: (usize, usize),
+    ) -> usize;
 }
 
 enum NextNodeResult<T> {
@@ -37,8 +43,10 @@ impl AStar {
         // PathGenerator is used to build possible paths
         let mut inst = Self::new(target);
         let exposed_struct = *from_struct;
-        inst.que
-            .push(Node::new(start, exposed_struct.calculate_heuristic_cost(start, target)));
+        inst.que.push(Node::new(
+            start,
+            exposed_struct.calculate_heuristic_cost(start, target),
+        ));
         loop {
             if inst.que.is_empty() {
                 return None; // no elements left therefor no fast way out
@@ -58,7 +66,9 @@ impl AStar {
                         exposed_struct.calculate_heuristic_cost(possible_path, inst.target),
                     ) {
                         NextNodeResult::Ok(v) => inst.que.push(v),
-                        NextNodeResult::Finished => return Some(inst.reconstruct_path(Rc::clone(&top))),
+                        NextNodeResult::Finished => {
+                            return Some(inst.reconstruct_path(Rc::clone(&top)))
+                        }
                     }
                 }
             }
@@ -165,5 +175,92 @@ impl PartialOrd for Node {
     }
     fn lt(&self, other: &Self) -> bool {
         self.heuristic_cost < other.heuristic_cost
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn testrun() {
+        fn calc_usize_diff(x: usize, y: usize) -> usize {
+            if x > y {
+                return x - y;
+            }
+            y - x
+        }
+
+        struct Map {
+            blocks: Vec<(usize, usize)>,
+        }
+        impl Map {
+            fn path_is_possible(&self, possible_path: (usize, usize)) -> Option<(usize, usize)> {
+                if self.blocks.contains(&possible_path) {
+                    return None;
+                }
+                Some(possible_path)
+            }
+        }
+        impl PathGenerator for Map {
+            fn generate_paths(&self, from_position: (usize, usize)) -> Vec<(usize, usize)> {
+                let mut possible_paths: Vec<(usize, usize)> = Vec::new();
+
+                if from_position.0 != 0 && from_position.1 != 0 {
+                    for possible_path in [
+                        (from_position.0 - 1, from_position.1 - 1),
+                        (from_position.0, from_position.1 - 1),
+                        (from_position.0 - 1, from_position.1),
+                    ] {
+                        if let Some(path_) = self.path_is_possible(possible_path) {
+                            possible_paths.push(path_)
+                        }
+                    }
+                };
+                for possible_path in [
+                    (from_position.0 + 1, from_position.1 + 1),
+                    (from_position.0, from_position.1 + 1),
+                    (from_position.0 + 1, from_position.1),
+                ] {
+                    if let Some(path_) = self.path_is_possible(possible_path) {
+                        possible_paths.push(path_)
+                    }
+                }
+                return possible_paths;
+            }
+            #[allow(unused_variables)]
+            fn calculate_cost(
+                &self,
+                current_position: (usize, usize),
+                next_position: (usize, usize),
+            ) -> usize {
+                1
+            }
+            fn calculate_heuristic_cost(
+                &self,
+                position: (usize, usize),
+                target: (Option<usize>, Option<usize>),
+            ) -> usize {
+                if target.0.is_none() && target.1.is_none() {
+                    return 0;
+                }
+                if target.0.is_none() {
+                    return calc_usize_diff(target.1.unwrap(), position.1);
+                }
+                if target.1.is_none() {
+                    return calc_usize_diff(target.0.unwrap(), position.0);
+                }
+                return f64::sqrt(
+                    ((calc_usize_diff(target.0.unwrap(), position.0) ^ 2)
+                        + (calc_usize_diff(target.1.unwrap(), position.1) ^ 2))
+                        as f64,
+                ) as usize;
+            }
+        }
+
+        let map_fixture = Map {
+            blocks: vec![(2, 2)],
+        };
+        let path = AStar::run(Box::new(&map_fixture), (0, 0), (Some(3), Some(3)));
+        assert_eq!(path.unwrap(), vec![(3, 3), (2, 3), (1, 2), (1, 1), (0, 0)])
     }
 }

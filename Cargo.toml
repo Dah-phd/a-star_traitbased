@@ -1,16 +1,16 @@
 [package]
 name = "a-star_traitbased"
 version = "0.1.0"
-edition = "2022"
+edition = "2021"
 include = [
     "src/**/*",
     "Cargo.toml",
     "LICENCE",
     "README.MD"
 ]
-homepage = ""
+homepage = "https://github.com/Dah-phd/a-star_traitbased"
 description = "Implemetaion of A* useful for stuct, based on train implementation"
-repository = ""
+repository = "https://github.com/Dah-phd/a-star_traitbased"
 keywords = [
     "A*",
     "A star",
@@ -20,7 +20,5 @@ keywords = [
 ]
 categories = ["Algorithms"]
 license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
