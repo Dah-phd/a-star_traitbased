@@ -65,9 +65,11 @@ impl AStar {
                         exposed_struct.calculate_cost(top.position, possible_path),
                         exposed_struct.calculate_heuristic_cost(possible_path, inst.target),
                     ) {
-                        NextNodeResult::Ok(v) => inst.que.push(v),
+                        NextNodeResult::Ok(node) => inst.que.push(node),
                         NextNodeResult::Finished => {
-                            return Some(inst.reconstruct_path(Rc::clone(&top)))
+                            let mut path = inst.reconstruct_path(Rc::clone(&top));
+                            path.insert(0, possible_path);
+                            return Some(path);
                         }
                     }
                 }
@@ -83,7 +85,7 @@ impl AStar {
         cost: usize,
         heuristic_cost: usize,
     ) -> NextNodeResult<Node> {
-        if self.target_is_reached(&*old_node) {
+        if self.target_is_reached(&new_position) {
             return NextNodeResult::Finished;
         }
         let new_cost = cost + old_node.cost;
@@ -91,15 +93,15 @@ impl AStar {
             position: new_position,
             comes_from: Some(old_node),
             cost: new_cost,
-            heuristic_cost: heuristic_cost + new_cost,
+            total_cost: heuristic_cost + new_cost,
         })
     }
 
-    fn target_is_reached(&self, node: &Node) -> bool {
-        if self.target.0.is_some() && self.target.0.unwrap() != node.position.0 {
+    fn target_is_reached(&self, position: &(usize, usize)) -> bool {
+        if self.target.0.is_some() && self.target.0.unwrap() != position.0 {
             return false;
         }
-        if self.target.1.is_some() && self.target.1.unwrap() != node.position.1 {
+        if self.target.1.is_some() && self.target.1.unwrap() != position.1 {
             return false;
         }
         true
@@ -128,34 +130,34 @@ impl AStar {
     }
 }
 
-#[derive(Eq)]
+#[derive(Eq, Debug)]
 struct Node {
     position: (usize, usize),
-    comes_from: Option<Rc<Node>>,
     cost: usize,
-    heuristic_cost: usize,
+    total_cost: usize,
+    comes_from: Option<Rc<Node>>,
 }
 
 impl Node {
-    fn new(position: (usize, usize), heuristic_cost: usize) -> Self {
+    fn new(position: (usize, usize), total_cost: usize) -> Self {
         Self {
             position,
             comes_from: None,
             cost: 0,
-            heuristic_cost,
+            total_cost,
         }
     }
 }
 
 impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
-        self.heuristic_cost == other.heuristic_cost
+        self.total_cost == other.total_cost
     }
 }
 
 impl Ord for Node {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.heuristic_cost.cmp(&other.heuristic_cost)
+        self.total_cost.cmp(&other.total_cost)
     }
 }
 
@@ -165,16 +167,16 @@ impl PartialOrd for Node {
     }
 
     fn ge(&self, other: &Self) -> bool {
-        self.heuristic_cost >= other.heuristic_cost
+        self.total_cost >= other.total_cost
     }
     fn le(&self, other: &Self) -> bool {
-        self.heuristic_cost <= other.heuristic_cost
+        self.total_cost <= other.total_cost
     }
     fn gt(&self, other: &Self) -> bool {
-        self.heuristic_cost > other.heuristic_cost
+        self.total_cost > other.total_cost
     }
     fn lt(&self, other: &Self) -> bool {
-        self.heuristic_cost < other.heuristic_cost
+        self.total_cost < other.total_cost
     }
 }
 
