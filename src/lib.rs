@@ -36,13 +36,13 @@ impl AStar {
     }
 
     pub fn run<T: PathGenerator>(
-        from_struct: Box<&T>,
+        from_struct: &T,
         start: (usize, usize),
         target: (Option<usize>, Option<usize>),
     ) -> Option<Vec<(usize, usize)>> {
         // PathGenerator is used to build possible paths
         let mut inst = Self::new(target);
-        let exposed_struct = *from_struct;
+        let exposed_struct = from_struct;
         inst.que.push(Node::new(
             start,
             exposed_struct.calculate_heuristic_cost(start, target),
@@ -54,7 +54,7 @@ impl AStar {
             inst.que.sort();
             let top = Rc::new(inst.que.remove(0));
             let possible_paths = exposed_struct.generate_paths(top.position);
-            if possible_paths.len() != 0 {
+            if !possible_paths.is_empty() {
                 for possible_path in possible_paths {
                     if inst.pull_from_closed_by_position(possible_path).is_some() {
                         continue;
@@ -111,22 +111,17 @@ impl AStar {
         let mut fastest_path = vec![opt.position];
         let mut comes_from = opt.comes_from.as_ref();
         loop {
-            if comes_from.is_some() {
-                fastest_path.push(comes_from.unwrap().position);
+            if let Some(node) = comes_from {
+                fastest_path.push(node.position);
+                comes_from = node.comes_from.as_ref();
             } else {
                 return fastest_path;
             }
-            comes_from = comes_from.unwrap().comes_from.as_ref();
         }
     }
 
-    fn pull_from_closed_by_position(&self, position: (usize, usize)) -> Option<&Node> {
-        for closed_node in self.closed_nodes.iter() {
-            if closed_node.position == position {
-                return Some(closed_node);
-            }
-        }
-        None
+    fn pull_from_closed_by_position(&self, position: (usize, usize)) -> Option<&Rc<Node>> {
+        self.closed_nodes.iter().find(|closed_node| closed_node.position == position)
     }
 }
 
@@ -227,7 +222,7 @@ mod test {
                         possible_paths.push(path_)
                     }
                 }
-                return possible_paths;
+                possible_paths
             }
             #[allow(unused_variables)]
             fn calculate_cost(
@@ -251,18 +246,18 @@ mod test {
                 if target.1.is_none() {
                     return calc_usize_diff(target.0.unwrap(), position.0);
                 }
-                return f64::sqrt(
+                f64::sqrt(
                     ((calc_usize_diff(target.0.unwrap(), position.0) ^ 2)
                         + (calc_usize_diff(target.1.unwrap(), position.1) ^ 2))
                         as f64,
-                ) as usize;
+                ) as usize
             }
         }
 
         let map_fixture = Map {
             blocks: vec![(2, 2)],
         };
-        let path = AStar::run(Box::new(&map_fixture), (0, 0), (Some(3), Some(3)));
+        let path = AStar::run(&map_fixture, (0, 0), (Some(3), Some(3)));
         assert_eq!(path.unwrap(), vec![(3, 3), (2, 3), (1, 2), (1, 1), (0, 0)])
     }
 }
